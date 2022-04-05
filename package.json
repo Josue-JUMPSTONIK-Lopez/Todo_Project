@@ -4,13 +4,20 @@
   "description": "System Integrations Week 1 Starter",
   "main": "app.js",
   "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
     "test": "jest"
   },
   "keywords": [],
   "author": "JD",
   "license": "ISC",
   "dependencies": {
+    "@hapi/boom": "^9.1.4",
     "ejs": "^3.1.6",
     "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "boom": "^7.3.0",
+    "cors": "^2.8.5"
   }
 }
