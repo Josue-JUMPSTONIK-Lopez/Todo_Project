@@ -21,7 +21,39 @@ class TodoList{
 
     async eliminarTodos(){
         this.todos = [];
+    }
 
+    async editTodo(id, tarea){
+        if (id !== "" && tarea !== "") {
+            let notFound = true;
+            for (const todo of this.todos) {
+                if( todo.id == id){
+                    notFound = false
+                    todo.tarea = tarea;
+
+                    todo.component = `<li
+		            class="${todo.completado ? "completed" : ""}"
+                    id="todo${todo.id}"
+		            data-id="abc">
+		            	<div class="view">
+		            		<input value="${todo.id}" onclick="setComplete(this)" class="toggle" type="checkbox" 
+                            ${todo.completado ? "checked": ""}
+		            		>
+		            		<input id="editableText${todo.id}" class="label" value="${todo.tarea}" type="text" onchange="setText(this)"/>
+		            		<button value="${todo.id}" onclick='edit(this);' class="editable"></button>
+		            		<button value="${todo.id}" onclick='destroy(this);' class="destroy"></button>
+		            	</div>
+		            </li>`
+
+                    return todo
+                }
+            }
+            if (notFound) {
+                throw boom.notFound("todo with that Id couldn't be found")
+            }
+        } else {
+            throw boom.notAcceptable('Id of todo is missing')
+        }
     }
 
     async todosPendiente(){
@@ -39,7 +71,7 @@ class TodoList{
                 if( todo.id == id){
                     notFound = false
                     todo.completado = !todo.completado;
-                    break;
+                    return todo
                 }
             }
             if (notFound) {

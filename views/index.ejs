@@ -152,6 +152,8 @@ body {
 	color: #737373;
 }
 
+
+
 .todo-list {
 	margin: 0;
 	padding: 0;
@@ -226,12 +228,39 @@ body {
 	text-decoration: line-through;
 }
 
+
+.todo-list li .toggle + .label {
+	background-image: url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%22-10%20-18%20100%20135%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2250%22%20fill%3D%22none%22%20stroke%3D%22%23ededed%22%20stroke-width%3D%223%22/%3E%3C/svg%3E');
+	background-repeat: no-repeat;
+	background-position: center left;
+}
+
+.todo-list li .toggle:checked + .label {
+	background-image: url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%22-10%20-18%20100%20135%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2250%22%20fill%3D%22none%22%20stroke%3D%22%23bddad5%22%20stroke-width%3D%223%22/%3E%3Cpath%20fill%3D%22%235dc2af%22%20d%3D%22M72%2025L42%2071%2027%2056l-4%204%2020%2020%2034-52z%22/%3E%3C/svg%3E');
+}
+
+.todo-list li .label {
+	word-break: break-all;
+	padding: 15px 15px 15px 60px;
+	display: block;
+	line-height: 1.2;
+	transition: color 0.4s;
+	font-weight: 400;
+	color: #4d4d4d;
+	border: transparent;
+}
+
+.todo-list li.completed .label {
+	color: #cdcdcd;
+	text-decoration: line-through;
+}
+
 .todo-list li .destroy {
 	display: none;
 	position: absolute;
-	top: 0;
+	top: 0px;
 	right: 10px;
-	bottom: 0;
+	bottom: -5px;
 	width: 40px;
 	height: 40px;
 	margin: auto 0;
@@ -250,6 +279,32 @@ body {
 }
 
 .todo-list li:hover .destroy {
+	display: block;
+}
+.todo-list li .editable {
+	display: none;
+	position: absolute;
+	top: 0;
+	right: 40px;
+	bottom: -10px;
+	width: 40px;
+	height: 40px;
+	margin: auto 0;
+	font-size: 25px;
+	color: #cc9a9a;
+	margin-bottom: 11px;
+	transition: color 0.2s ease-out;
+}
+
+.todo-list li .editable:hover {
+	color: #af5b5e;
+}
+
+.todo-list li .editable:after {
+	content: '✏️';
+}
+
+.todo-list li:hover .editable {
 	display: block;
 }
 
@@ -513,45 +568,21 @@ hr {
 				<input id="toggle-all" class="toggle-all" type="checkbox">
 				<label for="toggle-all">Mark all as complete</label>
 				<ul class="todo-list">
-					<% if(todos.length){ %> 
-						<% todos.forEach( function(todo){ %> 
-							<li 
-							<% if(todo.completado){ %> 
-							class="completed"
-							<% }else{ %>
-							class=""
-							<% } %>  
-							data-id="abc">
-								<div class="view">
-									<input value="<%= todo.id %>" onclick="setComplete(this)" class="toggle" type="checkbox" 
-									<% if(todo.completado){ %> 
-										checked
-										<% }%>
-									>
-									<label><%= todo.tarea %></label>
-									<button value="<%= todo.id %>" onclick='destroy(this);' class="destroy"></button>
-								</div>
-								<input class="edit" >
-							</li>
-						<%}) %> 
-					<% }else{ %>
-						<h2>No hay Todos</h2>
-					<% } %>  
 				</ul>
 			</section>
 			<footer class="footer">
-				<% if(todos.length){ %> 
+				<!-- <% if(todos.length){ %> 
 				<span class="todo-count"><strong><%= todos.filter(todo => todo.completado === false).length %> </strong> pendiente(s)</span>
-				<% } %> 
+				<% } %>  -->
 				<ul class="filters">
 					<li>
-						<a class="selected filtro" class="selected" href="/">Todos</a>
+						<a id="todos" class="selected filtro" class="selected">Todos</a>
 					</li>
 					<li>
-						<a class="filtro" href="/active">Pendientes</a>
+						<a id="pendientes" class="filtro">Pendientes</a>
 					</li>
 					<li>
-						<a class="filtro" href="/completed">Completados</a>
+						<a id="completados" class="filtro">Completados</a>
 					</li>
 				</ul>
 				<button class="clear-completed">Borrar Todos</button>
@@ -562,13 +593,25 @@ hr {
     <script>
 		const divTodoList = document.querySelector('.todo-list');
 		const txtInput    = document.querySelector('.new-todo');
+		const btnTodos = document.querySelector('#todos')
+		const btnPendientes = document.querySelector('#pendientes');
+		const btnCompletados = document.querySelector('#completados');
 		const btnBorrar    = document.querySelector('.clear-completed');
 		const ulFiltros = document.querySelector('.filters');
+		const parent = document.querySelector(".todo-list")
+		window.onload = async()=> {
+			const response = await fetch("http://localhost:3030/todos");
+			const data = await response.json();
+			console.log(data)
+			data.forEach( todo =>{
+				parent.innerHTML= parent.innerHTML + todo.component
+			})
+		};
 
 		//Eventos
-		txtInput.addEventListener('keyup', (event) => {
+		txtInput.addEventListener('keyup', async(event) => {
 			if(event.keyCode === 13 && txtInput.value.length > 0){
-				fetch(`http://localhost:3030/todos/${txtInput.value}`,{
+				const response = await fetch(`http://localhost:3030/todos/${txtInput.value}`,{
 					method: 'POST',
 					headers: {
 						'Accept': 'application/json',
@@ -576,15 +619,15 @@ hr {
 					},
 					body: {}
 				})
-				console.log(txtInput.value)
+				const todo = await response.json();
+				parent.innerHTML= parent.innerHTML + todo.component
 				txtInput.value = '';
-				location.reload()
 			}
 		})
 
-		const setComplete = (event) =>{
+		const setComplete = async(event) =>{
 			const id = event.value;
-			fetch(`http://localhost:3030/active/${id}`,{
+			const response = await fetch(`http://localhost:3030/active/${id}`,{
 				method: 'PUT',
 				headers: {
 					'Accept': 'application/json',
@@ -592,13 +635,22 @@ hr {
 				},
 				body: {}
 			})
-			location.reload()
+			const todo = await response.json();
+			console.log(todo)
+			const todoToUpdate = document.querySelector(`#todo${event.value}`)
+			if(todo.completado){
+				todoToUpdate.classList.add("completed")
+				event.checked = true
+			}else{
+				todoToUpdate.classList.remove("completed")
+				event.checked = false
+			}
 		}
 
-		const destroy = (event)=>{
+		const destroy = async(event)=>{
 			console.log(event.value)
 			const id = event.value;
-			fetch(`http://localhost:3030/todos/${id}`,{
+			const response = await fetch(`http://localhost:3030/todos/${id}`,{
 				method: 'DELETE',
 				headers: {
 					'Accept': 'application/json',
@@ -606,10 +658,38 @@ hr {
 				},
 				body: {}
 			})
-			location.reload()
+			const todo = await response.json();
+			console.log(todo)
+			const todoToDelete = document.querySelector(`#todo${event.value}`)
+			todoToDelete.remove()
 		}
 
-		btnBorrar.addEventListener('click', () => {
+		const edit = async(event)=>{
+			const id = event.value;
+			const tarea = document.querySelector(`#editableText${id}`).value
+			console.log(id);
+			console.log(tarea)
+			const response = await fetch(`http://localhost:3030/todos/${id}/edit/${tarea}`,{
+				method: 'PUT',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({id, tarea})
+			})
+			const todo = await response.json();
+			console.log(todo)
+			const todoToUpdate = document.querySelector(`#todo${event.value}`)
+			
+		}
+
+		const setText = (event) =>{
+			
+		}
+
+		
+
+		btnBorrar.addEventListener('click', async() => {
 			fetch(`http://localhost:3030/todos`,{
 				method: 'DELETE',
 				headers: {
@@ -617,9 +697,46 @@ hr {
 					'Content-Type': 'application/json'
 				},
 				body: {}
-			})
-			location.reload()
+			}).then(
+				parent.innerHTML=""
+			)
+			
 		});
+
+		btnPendientes.addEventListener('click', async() => {
+			fetch(`http://localhost:3030/active`)
+			.then(res => res.json())
+			.then(res => {
+				parent.innerHTML=""
+				res.forEach(res => {
+					console.log(res)
+					parent.innerHTML = parent.innerHTML + res.component;
+				})
+			})
+		});
+
+		btnCompletados.addEventListener('click', async() => {
+			const response = await fetch(`http://localhost:3030/completed`)
+			.then(res => res.json())
+			.then(res => {
+				parent.innerHTML=""
+				res.forEach(res => {
+					console.log(res)
+					parent.innerHTML = parent.innerHTML + res.component;
+				})
+			})
+		});
+
+		btnTodos.addEventListener('click', async()=> {
+			const response = await fetch("http://localhost:3030/todos");
+			const data = await response.json();
+			console.log(data)
+			parent.innerHTML= ""
+			data.forEach( todo =>{
+				parent.innerHTML= parent.innerHTML + todo.component
+			})
+		})
+
 	</script>
   </body>
 </html>
